@@ -2,9 +2,9 @@
 title: "Assignment 2 - Language Development in ASD - Part 1 - Explaining development"
 author: "Andreas Jeppesen,Lina Pedersen, Sophie Korch, Thea Pedersen"
 date: "10/09 -2020"
-output: 
-  html_document:
-    keep_md: true
+output:
+  md_document:
+    variant: markdown_github
 
 
 ---
@@ -204,8 +204,6 @@ Remember to report:
 - A plain word description of the results
 - A plot of your model's predictions (and some comments on whether the predictions are sensible)
 
-[REPORT THE RESULTS]
-Linguistic development of children MLU is affected by ... [COMPLETE]
 
 ## Let's test hypothesis 2: Parents speak equally to children with ASD and TD  (Exercise 3)
 
@@ -239,8 +237,6 @@ summary(MOTfull)
 
 ```
 
-Parent MLU is affected by ... but probably not ...
-[REPORT THE RESULTS]
 
 ### Adding new variables (Exercise 4)
 
@@ -281,7 +277,6 @@ summary(m5)
 # Summarizing the model reveals that the effect of verbal IQ is significant
 ```
 
-In addition to ..., the MLU of the children is also correlated with ...
-Using AIC / nested F-tests as a criterium, we compared models of increasing complexity and found that ...
 
-[REPORT THE RESULTS]
+
+
