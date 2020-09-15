@@ -1,8 +1,12 @@
 ---
 title: "Assignment 2 - Language Development in ASD - Part 1 - Explaining development"
-author: "[YOUR NAME]"
-date: "[DATE]"
-output: html_document
+author: "Andreas Jeppesen,Lina Pedersen, Sophie Korch, Thea Pedersen"
+date: "10/09 -2020"
+output: 
+  html_document:
+    keep_md: true
+
+
 ---
     
 ```{r setup, include=FALSE}
@@ -76,6 +80,9 @@ Load necessary libraries : what will you need?
 
 ```{r Load Libraries, include = FALSE}
 
+#Loading packages
+pacman::p_load(tidyverse,ggplot2,lme4)
+
 ```
 
 ### Define your working directory and load the data
@@ -89,6 +96,9 @@ If you opened this Rmd file outside of a project, you will need some code to fin
 
 ```{r Load Data, include = FALSE}
 
+#Loading data
+df <- read_csv("autismdata.csv")
+
 ```
 
 ### Characterize the participants (Exercise 1)
@@ -101,11 +111,19 @@ Describe the characteristics of the two groups of participants and whether the t
 
 ```{r descriptive stats, include = FALSE}
 
+#Changing the format of the variables. Splitting the data by diagnosis. Mapping the data from the two groups.
+df %>%
+  mutate(
+    Gender = as.factor(Gender),
+    Diagnosis=as.factor(Diagnosis),
+    Ethnicity=as.factor(Ethnicity),
+    SUBJ=as.factor(SUBJ),
+    Age=as.numeric(Age)) %>% 
+  split(df$Diagnosis) %>% 
+  map(summary)
+
 ```
 
-The sample included mostly young (<20) white males ...
-
-[REPORT THE RESULTS]
 
 ## Let's test hypothesis 1: Children with ASD display a language impairment  (Exercise 2)
 
@@ -119,11 +137,26 @@ Remember to plot the data first and then to run a statistical test.
 
 ```{r ex2, include = FALSE}
 
+#Making a plot with a regression line
+df %>% 
+  ggplot()+
+  aes(x=VISIT, y=CHI_MLU, colour=Diagnosis)+
+  geom_point()+
+  geom_smooth(method="lm")
+
+#Fixed effects: Age, Diagnosis
+#Random effects: SUBJ (ID)
+
+m1 <- lmer(CHI_MLU ~ VISIT * Diagnosis + (1+VISIT|SUBJ), data = df, REML = FALSE)
+
 ```
+
 
 How would you evaluate whether the model is a good model?
 
 ```{r ex2 evaluate, include = FALSE}
+#Getting the R^2 from the MuMIn package
+MuMIn::r.squaredGLMM(m1)
 
 ```
 
@@ -133,11 +166,35 @@ First build the different models, then compare them to see which one is better.
 
 ```{r ex2 growth curve, include = FALSE}
 
+#Growth curve model (Visit is squared)  
+full <- lmerTest::lmer(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2) +
+          (1 + VISIT|SUBJ),
+          data = df, 
+          REML = FALSE)
+
+summary(full)
+
 ```
 
 Exciting right? Let's check whether the model is doing an alright job at fitting the data. Plot the actual CHI_MLU data against the predictions of the model fitted(model). 
 
 ```{r}
+
+fitted(full) # This function gets the predicted values from the full-model
+predicted.df <- data.frame(fitted(full)) # saving the values as a df
+CHI_MLU <- df$CHI_MLU %>%  # saving the real CHI_MLU vlaues
+  na.exclude()             # in which we exclude the NA's
+
+predicted.df$CHI_MLU <- CHI_MLU   # Adding a column to the predicted.df with the CHI_MLU values
+# Making a scatterplot in which we compare the actual values of CHI_MLU (x-axis) to the values of CHI_MLU predicted by the model (y-axis)
+
+predicted.df %>% 
+ggplot() + 
+  aes(x = CHI_MLU , y = fitted.full. ) +
+  geom_point() +
+  theme_classic()+
+  geom_abline(intercept=0,slope=1, colour="Red")
+# The points fall (roughly) on a linear diagonal, indicating that the model is good at predicting the true values of CHI_MLU
 
 ```
 
@@ -156,6 +213,30 @@ Linguistic development of children MLU is affected by ... [COMPLETE]
 
 ```{r ex3, include = FALSE}
 
+#Plotting 
+df %>% 
+  ggplot()+
+  aes(x=VISIT, y=MOT_MLU, colour=Diagnosis)+
+  geom_point()+
+  geom_smooth(method="lm")
+
+#Fixed effects: Age, Diagnosis
+#Random effects: SUBJ (ID)
+
+m2 <- lmer(MOT_MLU ~ VISIT * Diagnosis + (1+VISIT|SUBJ), data = df, REML = FALSE)
+
+
+MuMIn::r.squaredGLMM(m2)
+
+#Growth curve,  
+MOTfull <- lmerTest::lmer(MOT_MLU ~ VISIT * Diagnosis + I(VISIT^2) +
+          (1 + VISIT|SUBJ),
+          data = df, 
+          REML = FALSE)
+
+summary(MOTfull)
+
+
 ```
 
 Parent MLU is affected by ... but probably not ...
@@ -168,6 +249,36 @@ Your task now is to figure out how to best describe the children linguistic traj
 
 ```{r ex4, include = FALSE}
 
+m3 <- lm(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2), data = df)
+
+MuMIn::r.squaredGLMM(m3)
+MuMIn::r.squaredGLMM(full)
+
+
+anova(full,m3)
+
+```
+
+
+```{r}
+# Model including effect of Social Skills
+m4 <- lmerTest::lmer(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2) + (1 + VISIT|SUBJ) + SocialSkills1, data = df, REML = FALSE) # failed to converge
+isSingular(m4)  # It is not singular
+# Model with Verbal IQ
+m5 <- lmerTest::lmer(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2) + (1 + VISIT|SUBJ) + VerbalIQ1, data = df, REML = FALSE)
+# Model with non-verbal IQ
+m6 <- lmerTest::lmer(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2) + (1 + VISIT|SUBJ) + NonVerbalIQ1, data = df, REML = FALSE)
+# Model with Gender
+m7 <- lmerTest::lmer(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2) + (1 + VISIT|SUBJ) + Gender , data = df, REML = FALSE) # failed to converge
+isSingular(m7) # It is not singular
+# Model with Severity of symptoms
+m8 <- lmerTest::lmer(CHI_MLU ~ VISIT * Diagnosis + I(VISIT^2) + (1 + VISIT|SUBJ) + SeverityOfSymptoms1, data = df, REML = FALSE)
+
+# Comparing all the models with AIC
+AIC(full, m4, m5, m6, m7, m8)
+# The best model is the full model with Verbal IQ as an additional parameter
+summary(m5)
+# Summarizing the model reveals that the effect of verbal IQ is significant
 ```
 
 In addition to ..., the MLU of the children is also correlated with ...
